@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geophysical Calculator</title>
+    <!-- 
+      Internal CSS - No external links or frameworks.
+      Uses a cross-platform system font stack.
+    -->
+    <style>
+        :root {
+            --color-bg: #f9fafb;
+            --color-bg-card: #ffffff;
+            --color-border: #e5e7eb;
+            --color-text-header: #111827;
+            --color-text-body: #374151;
+            --color-text-label: #6b7280;
+            --color-brand: #4f46e5;
+            --color-brand-hover: #4338ca;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --radius: 0.5rem;
+        }
+
+        body {
+            /* Use a generic, cross-platform font stack */
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            background-color: var(--color-bg);
+            color: var(--color-text-body);
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 1rem auto;
+            padding: 1rem;
+        }
+
+        /* Use CSS Grid for layout */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        
+        /* Layout for full-width cards */
+        .card.full-width {
+            grid-column: 1 / -1; /* Span all columns */
+        }
+
+        .card {
+            background-color: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-text-header);
+            margin-top: 0;
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 0.75rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-text-label);
+            margin-bottom: 0.25rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: 0.375rem;
+            box-sizing: border-box; /* Important for width: 100% */
+        }
+        
+        .option-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .option-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 0.5rem;
+        }
+        
+        .option-group label {
+            margin-bottom: 0;
+            font-weight: 400;
+            color: var(--color-text-body);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+            background-color: var(--color-brand);
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--color-brand-hover);
+        }
+
+        /* Results & Table Styling */
+        #results-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #results-content li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        #results-content li span:first-child {
+            font-weight: 500;
+            color: var(--color-text-body);
+        }
+
+        #results-content li span:last-child {
+            font-weight: 600;
+            color: var(--color-text-header);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        th {
+            background-color: var(--color-bg);
+            color: var(--color-text-label);
+            font-weight: 600;
+        }
+
+        /* Style for both formula blocks */
+        #hdredit-formula, .hdredit-style {
+            font-family: monospace;
+            font-size: 1.1rem;
+            background-color: var(--color-bg);
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin-top: 1rem;
+            word-wrap: break-word;
+        }
+
+        .highlight-class {
+            font-weight: 700;
+            color: var(--color-brand);
+        }
+
+        #diagram-svg {
+            width: 100%;
+            height: auto;
+            border: 1px solid var(--color-border);
+            border-radius: 0.375rem;
+            user-select: none;
+        }
+        
+        /* Responsive layout */
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: 1fr; /* Stack columns on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="grid-container">
+            <!-- Card 1: Input Parameters -->
+            <div id="input-card" class="card">
+                <h2>Input Parameters</h2>
+                <div class="input-group">
+                    <label for="num_sources">Number of sources</label>
+                    <input id="num_sources" type="number" value="3">
+                </div>
+                <div class="input-group">
+                    <label for="group_interval">Group interval (m)</label>
+                    <input id="group_interval" type="number" value="12.5">
+                </div>
+                <div class="input-group">
+                    <label for="shot_point_interval">Shot point interval (pop) (m)</label>
+                    <input id="shot_point_interval" type="number" value="12.5">
+                </div>
+                <div class="input-group">
+                    <label for="groups_per_cable"># Groups per cable</label>
+                    <input id="groups_per_cable" type="number" value="648" step="12">
+                </div>
+                <div class="input-group">
+                    <label for="inline_near_offset">Inline near offset (m)</label>
+                    <input id="inline_near_offset" type="number" value="100.0">
+                </div>
+                <div class="input-group">
+                    <label for="cable_separation">Cable separation (m)</label>
+                    <input id="cable_separation" type="number" value="150.0">
+                </div>
+                <div class="input-group">
+                    <label for="source_separation">Source separation (m)</label>
+                    <input id="source_separation" type="number" value="50.0">
+                </div>
+                <div class="input-group">
+                    <label for="num_cables"># Cables</label>
+                    <input id="num_cables" type="number" value="12">
+                </div>
+                <div class="input-group">
+                    <label for="cable_fanning_factor">Cable Fanning Factor</label>
+                    <input id="cable_fanning_factor" type="number" value="1.0" step="0.05">
+                </div>
+                <button id="calculate-btn" class="btn">Calculate</button>
+            </div>
+
+            <!-- Card 2: Calculated Parameters & Geometry -->
+            <div id="results-card" class="card">
+                <h2>Calculated Results</h2>
+                <div id="results-content">
+                    <!-- Basic parameters will be populated here -->
+                    <h3>Calculated Parameters</h3>
+                    <ul id="basic-results-list"></ul>
+                    
+                    <!-- Geometry results will be populated here -->
+                    <h3 style="margin-top: 1.5rem;">Acquisition Geometry</h3>
+                    <ul id="geometry-results-list"></ul>
+                </div>
+            </div>
+        </div> <!-- End of grid-container -->
+
+        <!-- Card 3: Geometry Diagram (Full Width) -->
+        <div id="diagram-card" class="card full-width">
+            <h2>Geometry Diagram</h2>
+            <svg id="diagram-svg" viewBox="0 0 800 750" xmlns="http://www.w3.org/2000/svg">
+                <!-- Static elements -->
+                <!-- Lighter vessel color -->
+                <path d="M 55 350 L 55 400 Q 35 387.5, 25 375 Q 35 362.5, 55 350 Z" fill="#9ca3af" />
+                <!-- Dotted centerline -->
+                <line x1="55" y1="375" x2="780" y2="375" stroke-dasharray="2,4" stroke="#d1d5db" />
+
+                <!-- This group will be cleared and repopulated by JavaScript -->
+                <g id="diagram-content-group"></g>
+            </svg>
+        </div>
+
+        <!-- Card 4: Offset Class Definitions (Full Width) -->
+        <div id="offsets-card" class="card full-width">
+            <h2>Offset Class Definitions</h2>
+            
+            <!-- Options for table display -->
+            <div class="option-group">
+                <input type="checkbox" id="show_all_classes_toggle">
+                <label for="show_all_classes_toggle">Show all offset classes</label>
+            </div>
+            <div class="option-group">
+                <input type="checkbox" id="round_classes_toggle">
+                <label for="round_classes_toggle">Round offset class values to integers</label>
+            </div>
+
+            <div class="table-container">
+                <table id="offset-class-table">
+                    <!-- Header will be populated by JS -->
+                    <thead></thead>
+                    <!-- Body will be populated by JS -->
+                    <tbody></tbody>
+                </table>
+            </div>
+            <p id="offset-class-note" style="display: none; margin-top: 1rem;"></p>
+            
+            <h3 style="margin-top: 1.5rem;">EOS hdredit formula</h3>
+            <div id="hdredit-formula">
+                <!-- Formula will be populated by JS -->
+            </div>
+
+            <h3 style="margin-top: 1.5rem;">Imaging AnyWare InFlowMath formula</h3>
+            <div id="inflowmath-formula" class="hdredit-style">
+                <!-- Formula will be populated by JS -->
+            </div>
+        </div>
+
+    </div> <!-- End of container -->
+
+
+    <script>
+        /**
+         * Formats a number for display.
+         * If 'round' is true, rounds to the nearest integer.
+         * Otherwise, displays 2 decimal places only if the number is not a whole number.
+         * @param {number} num - The number to format.
+         * @param {boolean} round - Whether to round to the nearest integer.
+         * @returns {string} The formatted number as a string, or "N/A".
+         */
+        function formatNumber(num, round = false) {
+            if (typeof num !== 'number' || isNaN(num)) {
+                return 'N/A';
+            }
+            // If rounding is requested, do it first.
+            if (round) {
+                return Math.round(num).toString();
+            }
+            // Otherwise, check for whole number vs. decimal.
+            if (num % 1 === 0) {
+                return num.toString();
+            }
+            return num.toFixed(2);
+        }
+
+        // --- Keys for Populating Results Lists ---
+        // These objects map result keys to their display labels in the UI.
+        const BASIC_KEYS = {
+            'cable_length': 'Cable length (for fold calc) (m):',
+            'cmp_spacing': 'CMP spacing (m):',
+            'shot_spacing_common_source_line': 'Shot spacing (common source line) (m):',
+            'cmp_cycle': 'CMP cycle:',
+            'nominal_offset_class_spacing': 'Nominal offset class spacing (m):',
+            'nominal_fold': 'Nominal fold:'
+        };
+
+        const GEOMETRY_KEYS = {
+            'receiver_array_width': 'Receiver Array Width (Near) (m):',
+            'receiver_array_width_far': 'Receiver Array Width (Far) (m):',
+            'inline_far_offset': 'Inline Far Offset (m):',
+            'crossline_offset_outermost_cable': 'Crossline Offset of Outermost Cable (m):',
+            'cable_separation': 'Cable Separation (Near) (m):',
+            'cable_separation_far': 'Cable Separation (Far) (m):',
+            'minimum_recorded_offset': 'Minimum Offset Recorded (m):',
+            'min_offset_outermost_cable': 'Minimum Offset to Outermost Near Channel (m):',
+            'max_offset_to_outermost_near_group': 'Maximum Offset to Outermost Near Channel (m):',
+            'offset_to_full_fold_point': 'Offset to Full Fold Point (m):',
+            'maximum_theoretical_offset': 'Maximum Theoretical Offset (m):'
+        };
+
+        /**
+         * Main function to perform all geophysical calculations.
+         * @param {object} inputs - An object containing all the parsed input values.
+         * @returns {object} An object containing all calculated results.
+         */
+        function calculateGeophysics(inputs) {
+            const {
+                num_sources,
+                group_interval,
+                shot_point_interval,
+                groups_per_cable,
+                inline_near_offset,
+                cable_separation,
+                source_separation,
+                num_cables,
+                cable_fanning_factor
+            } = inputs;
+
+            const results = {};
+
+            // --- Basic Calculated Parameters ---
+            // These are the core acquisition parameters derived from inputs.
+            results.cable_length = groups_per_cable * group_interval;
+            results.cmp_spacing = group_interval / 2.0;
+            results.shot_spacing_common_source_line = shot_point_interval * num_sources;
+            results.cmp_cycle = results.shot_spacing_common_source_line / results.cmp_spacing;
+            results.nominal_offset_class_spacing = 2 * shot_point_interval * num_sources;
+            results.nominal_fold = results.nominal_offset_class_spacing > 0 ? results.cable_length / results.nominal_offset_class_spacing : 0;
+            const spacing = results.nominal_offset_class_spacing; // Used for offset class logic
+
+            // --- Acquisition Geometry ---
+            // Width of the source array at the vessel.
+            const source_array_width = (num_sources > 1) ? (num_sources - 1) * source_separation : 0;
+            results.source_array_width = source_array_width; // Store for diagram logic
+            
+            // Total cross-line width of the receiver array at the NEAR end.
+            results.receiver_array_width = (num_cables > 1) ? (num_cables - 1) * cable_separation : 0;
+            
+            // Calculate receiver array width at the FAR end using the fanning factor.
+            results.receiver_array_width_far = results.receiver_array_width * cable_fanning_factor;
+
+            // Store cable separations in results for the list
+            results.cable_separation = cable_separation;
+            results.cable_separation_far = cable_separation * cable_fanning_factor;
+
+            // Physical length of the cable (from first to last group).
+            const cable_group_length = (groups_per_cable - 1) * group_interval;
+
+            // Cross-line distance from centerline to outermost cable at the NEAR end.
+            results.crossline_offset_outermost_cable = ((num_cables / 2.0) - 0.5) * cable_separation;
+
+            // Calculate crossline offset for the outermost cable at the FAR end.
+            results.crossline_offset_outermost_cable_far = results.crossline_offset_outermost_cable * cable_fanning_factor;
+            
+            // --- Inline Far Offset Calculation ---
+            // Correctly account for cable fanning using Pythagorean theorem.
+            // The physical cable length (hypotenuse) is constant. Fanning changes
+            // the inline (adjacent) and crossline (opposite) components.
+            if (cable_fanning_factor > 1 && results.crossline_offset_outermost_cable > 0) {
+                // Calculate the crossline distance the *outermost* cable fans out
+                const crossline_fanning_distance = results.crossline_offset_outermost_cable_far - results.crossline_offset_outermost_cable;
+                
+                // Use Math.max(0, ...) to prevent NaN from floating point errors
+                const inline_far_offset_component = Math.sqrt(
+                    Math.max(0, cable_group_length**2 - crossline_fanning_distance**2)
+                );
+                // The inline position of the end of the cable
+                results.inline_far_offset = inline_near_offset + inline_far_offset_component;
+            } else {
+                // No fanning, or single cable (no fanning distance)
+                results.inline_far_offset = inline_near_offset + cable_group_length;
+            }
+
+            // Minimum recorded offset (from innermost source to innermost cable's first group).
+            let crossline_dist_for_nearest_offset;
+            if (num_sources % 2 !== 0) { // Odd number of sources (one on centerline)
+                crossline_dist_for_nearest_offset = cable_separation / 2.0;
+            } else { // Even number of sources (no source on centerline)
+                crossline_dist_for_nearest_offset = Math.abs((cable_separation / 2.0) - (source_separation / 2.0));
+            }
+            results.minimum_recorded_offset = Math.sqrt(inline_near_offset**2 + crossline_dist_for_nearest_offset**2);
+            
+            // --- Outermost Cable Offsets (using NEAR end) ---
+            const crossline_outermost_source = source_array_width / 2.0;
+
+            // Shortest offset to the first group on the OUTERMOST cable (from nearest source).
+            const crossline_term_for_outermost_min_offset = Math.abs(results.crossline_offset_outermost_cable - crossline_outermost_source);
+            results.min_offset_outermost_cable = Math.sqrt(inline_near_offset**2 + crossline_term_for_outermost_min_offset**2);
+
+            // Longest offset to the first group on the OUTERMOST cable (from furthest source).
+            const crossline_term_for_outermost_max_near_offset = crossline_outermost_source + results.crossline_offset_outermost_cable;
+            results.max_offset_to_outermost_near_group = Math.sqrt(inline_near_offset**2 + crossline_term_for_outermost_max_near_offset**2);
+            
+            // Offset to the point where full fold is first achieved (end of 1st CMP cycle).
+            const inline_dist_full_fold = inline_near_offset + results.shot_spacing_common_source_line;
+            const crossline_dist_full_fold = (source_array_width / 2.0) + results.crossline_offset_outermost_cable;
+            results.offset_to_full_fold_point = Math.sqrt(inline_dist_full_fold**2 + crossline_dist_full_fold**2);
+
+            // Maximum theoretical offset (outermost source to outermost, farthest receiver).
+            // This calculation MUST use the FAR end geometry.
+            const crossline_max_comp_far = (source_array_width / 2.0) + (results.receiver_array_width_far / 2.0);
+            // This uses the new, fanning-corrected inline_far_offset
+            results.maximum_theoretical_offset = Math.sqrt(results.inline_far_offset**2 + crossline_max_comp_far**2);
+
+            // --- Offset Class Definitions ---
+            const offset_classes = [];
+            
+            // Calculate the anchor value 'outermost_cable_max_1st_offset' based on legacy Excel logic.
+            // This logic defines the boundaries of the class system.
+            let inline_comp, crossline_comp;
+            if (num_sources === 1) {
+                inline_comp = inline_near_offset + (2 * shot_point_interval);
+                crossline_comp = ((num_cables / 2.0) - 1) * cable_separation + (cable_separation / 2.0);
+            } else {
+                inline_comp = inline_near_offset + (2 * shot_point_interval * num_sources);
+                crossline_comp = (num_cables / 2.0 * cable_separation) - (source_separation / 2.0);
+            }
+            const outermost_cable_max_1st_offset = Math.sqrt(inline_comp**2 + crossline_comp**2);
+
+            // Define the minimum offset of the *original* Class 1 from the spreadsheet.
+            const original_min_offset_class_1 = outermost_cable_max_1st_offset + (spacing * (1 - 2)) + 1;
+
+            // Find which internal class number (n) would contain offset=0.
+            // This will be the new "0" class.
+            const zero_offset_class_number = Math.floor(
+                ((0 - original_min_offset_class_1) / spacing) + 1
+            );
+
+            // Find the first internal class number that could contain a recording.
+            const first_possible_class = Math.floor(
+                ((results.minimum_recorded_offset - original_min_offset_class_1) / spacing) + 1
+            );
+            
+            // Generate classes from the first possible recording up to nominal fold + 4.
+            for (let n = first_possible_class; n <= Math.floor(results.nominal_fold) + 4; n++) {
+                // Calculate boundaries based on the original logic.
+                const max_offset = outermost_cable_max_1st_offset + (spacing * (n - 1));
+                const min_offset = max_offset - spacing + 1;
+                const mid_value = (min_offset + max_offset) / 2.0;
+                
+                // Apply the new labeling convention relative to the zero-offset class.
+                const relative_class_label = (n - zero_offset_class_number).toString();
+                
+                offset_classes.push({
+                    "class": relative_class_label,
+                    "min_offset": min_offset,
+                    "mid_value": mid_value,
+                    "max_offset": max_offset
+                });
+            }
+            results.offset_classes = offset_classes;
+            
+            // Find the label of the first fully populated class.
+            let first_fully_populated_class_label = null;
+            const threshold = results.offset_to_full_fold_point;
+            for (const oc of offset_classes) {
+                // Highlight the class CONTAINING the threshold.
+                if (oc.min_offset <= threshold && threshold <= oc.max_offset) {
+                    first_fully_populated_class_label = oc.class;
+                    break;
+                }
+            }
+            results.first_fully_populated_class_label = first_fully_populated_class_label;
+
+            // Define the anchor for the hdredit formula based on the new labeling.
+            // This is the min_offset of the class now labeled "1".
+            const new_min_offset_class_1 = outermost_cable_max_1st_offset + (spacing * ((zero_offset_class_number + 1) - 2)) + 1;
+            results.first_min_offset_for_hdredit = new_min_offset_class_1;
+
+            return results;
+        }
+
+        /**
+         * Populates a list (<ul>) with key-value pairs from a results object.
+         * @param {string} listId - The ID of the <ul> element to populate.
+         * @param {object} data - The results object.
+         * @param {object} keys - The key-to-label mapping object.
+         */
+        function populateList(listId, data, keys) {
+            const list = document.getElementById(listId);
+            list.innerHTML = ''; // Clear old results
+            for (const [key, label] of Object.entries(keys)) {
+                const li = document.createElement('li');
+                const value = data[key];
+                // Use new formatNumber function (no rounding for these lists)
+                const formattedValue = formatNumber(value, false);
+                // The label (e.g., "CMP spacing (m):") already contains the unit.
+                li.innerHTML = `<span>${label}</span> <span>${formattedValue}</span>`;
+                list.appendChild(li);
+            }
+        }
+
+        // --- Helper functions for drawing ---
+        // These functions are in the global scope to be shared by both diagrams.
+
+        /**
+         * Creates a single-line SVG <text> element.
+         * @param {SVGElement} group - The SVG group to append to.
+         * @param {string} ns - The SVG namespace.
+         */
+        function createText(group, ns, x, y, text, anchor = "start", size = 12, fill = "#374151") {
+            if (text === null || text === undefined) return;
+            const el = document.createElementNS(ns, "text");
+            el.setAttribute("x", x);
+            el.setAttribute("y", y);
+            el.setAttribute("text-anchor", anchor);
+            el.setAttribute("font-size", `${size}px`);
+            el.setAttribute("fill", fill);
+            el.setAttribute("dominant-baseline", "middle");
+            el.textContent = text;
+            group.appendChild(el);
+        }
+
+        /**
+         * Creates a multi-line SVG <text> element using <tspan>.
+         * @param {SVGElement} group - The SVG group to append to.
+         * @param {string} ns - The SVG namespace.
+         */
+        function createMultiLineText(group, ns, x, y, label, value, anchor = "start", size = 12, fill = "#374151") {
+            const el = document.createElementNS(ns, "text");
+            el.setAttribute("x", x);
+            el.setAttribute("y", y);
+            el.setAttribute("text-anchor", anchor);
+            el.setAttribute("font-size", `${size}px`);
+            el.setAttribute("fill", fill);
+            el.setAttribute("dominant-baseline", "middle");
+
+            // First line (Label)
+            const tspan1 = document.createElementNS(ns, "tspan");
+            tspan1.setAttribute("x", x);
+            tspan1.textContent = label;
+            
+            // Second line (Value)
+            const tspan2 = document.createElementNS(ns, "tspan");
+            tspan2.setAttribute("x", x);
+            tspan2.setAttribute("dy", "1.2em"); // Move down 1.2x font size
+            tspan2.textContent = value;
+
+            el.appendChild(tspan1);
+            el.appendChild(tspan2);
+            group.appendChild(el);
+        }
+        
+        /** * Creates an SVG <line> element. 
+         * @param {SVGElement} group - The SVG group to append to.
+         * @param {string} ns - The SVG namespace.
+         */
+        function createLine(group, ns, x1, y1, x2, y2, color = "#6b7280", dashed = false) {
+            const el = document.createElementNS(ns, "line");
+            el.setAttribute("x1", x1);
+            el.setAttribute("y1", y1);
+            el.setAttribute("x2", x2);
+            el.setAttribute("y2", y2);
+            el.setAttribute("stroke", color);
+            if (dashed) {
+                const dashArray = (color === "#d1d5db") ? "2,4" : "4,4";
+                el.setAttribute("stroke-dasharray", dashArray);
+            }
+            group.appendChild(el);
+        }
+
+        /** * Creates a measurement line with perpendicular ticks. 
+         * @param {SVGElement} group - The SVG group to append to.
+         * @param {string} ns - The SVG namespace.
+         */
+        function createMeasurementLine(group, ns, x1, y1, x2, y2, color = "#6b7280", orientation = "H") {
+            const tick_size = 5;
+            createLine(group, ns, x1, y1, x2, y2, color); // Main line
+            if (orientation === "H") {
+                createLine(group, ns, x1, y1 - tick_size, x1, y1 + tick_size, color); // Start tick
+                createLine(group, ns, x2, y2 - tick_size, x2, y2 + tick_size, color); // End tick
+            } else { // "V"
+                createLine(group, ns, x1 - tick_size, y1, x1 + tick_size, y1, color); // Start tick
+                createLine(group, ns, x2 - tick_size, y2, x2 + tick_size, y2, color); // End tick
+            }
+        }
+
+        /**
+         * Updates the geometry diagram SVG with calculated values.
+         * @param {object} inputs - The user input object.
+         * @param {object} results - The calculated results object.
+         */
+        function updateDiagram(inputs, results) {
+            const svg = document.getElementById('diagram-svg');
+            const group = document.getElementById('diagram-content-group');
+            group.innerHTML = ''; // Clear previous drawing
+            
+            const ns = "http://www.w3.org/2000/svg"; // SVG namespace
+
+            // --- Define Diagram Coordinates ---
+            // These are pixel values for drawing, not real-world scales.
+            const svg_center_y = 375;
+            const svg_source_x = 120; // X-position of all sources
+            const svg_cable_start_x = 240; // X-position for the start of cables
+            const svg_cable_end_x = 750;   // X-position for the end of cables
+            const svg_cable_width = 9;     // Visual width of cable polygons
+            const svg_source_sep_display = 30;    // Y-separation for drawing sources
+            const svg_cable_sep_display = 37.5;   // Y-separation for drawing cables
+            const max_draw_count = 12; // Max number of sources/cables to draw
+            
+            // --- 1. Draw Sources ---
+            const num_sources_draw = Math.min(inputs.num_sources, max_draw_count);
+            const source_array_height_display = (num_sources_draw - 1) * svg_source_sep_display;
+            const svg_source_start_y = svg_center_y - (source_array_height_display / 2.0);
+            
+            for (let i = 0; i < num_sources_draw; i++) {
+                const y = svg_source_start_y + (i * svg_source_sep_display);
+                const el = document.createElementNS(ns, "circle");
+                el.setAttribute("cx", svg_source_x);
+                el.setAttribute("cy", y);
+                el.setAttribute("r", 5);
+                el.setAttribute("fill", "#ef4444");
+                group.appendChild(el);
+            }
+
+            // --- 2. Draw Cables ---
+            const num_cables_draw = Math.min(inputs.num_cables, max_draw_count);
+            // Near-end Y coordinates
+            const cable_array_height_display_near = (num_cables_draw - 1) * svg_cable_sep_display;
+            const svg_cable_start_y_near = svg_center_y - (cable_array_height_display_near / 2.0);
+            
+            // Far-end Y coordinates based on fanning factor
+            const cable_array_height_display_far = cable_array_height_display_near * inputs.cable_fanning_factor;
+            const svg_cable_start_y_far = svg_center_y - (cable_array_height_display_far / 2.0);
+            
+            for (let i = 0; i < num_cables_draw; i++) {
+                // Draw polygons (trapezoids) to show fanning
+                const y_near = svg_cable_start_y_near + (i * svg_cable_sep_display);
+                const y_far = svg_cable_start_y_far + (i * svg_cable_sep_display * inputs.cable_fanning_factor);
+                
+                const el = document.createElementNS(ns, "polygon");
+                const points = [
+                    `${svg_cable_start_x},${y_near - (svg_cable_width / 2.0)}`, // Top-left
+                    `${svg_cable_end_x},${y_far - (svg_cable_width / 2.0)}`,   // Top-right
+                    `${svg_cable_end_x},${y_far + (svg_cable_width / 2.0)}`,   // Bottom-right
+                    `${svg_cable_start_x},${y_near + (svg_cable_width / 2.0)}`  // Bottom-left
+                ].join(" ");
+                
+                el.setAttribute("points", points);
+                el.setAttribute("fill", "#bfdbfe"); // Lighter blue color
+                el.setAttribute("opacity", "1.0"); // Full opacity
+                group.appendChild(el);
+            }
+            
+            // --- 3. Find Key Y-Coordinates for Labels ---
+            // These Y-values map the calculation results to the drawing.
+            const y_innermost_source = (inputs.num_sources % 2 === 0) ? (svg_center_y - svg_source_sep_display / 2.0) : svg_center_y;
+            const y_outermost_source_top = svg_source_start_y;
+            const y_outermost_source_bottom = svg_source_start_y + source_array_height_display;
+            const y_innermost_cable = (inputs.num_cables % 2 === 0) ? (svg_center_y - svg_cable_sep_display / 2.0) : svg_center_y;
+            // Near end cable Y coordinates
+            const y_outermost_cable_top = svg_cable_start_y_near;
+            const y_outermost_cable_bottom = svg_cable_start_y_near + cable_array_height_display_near;
+            // Far end cable Y coordinates
+            const y_outermost_cable_top_far = svg_cable_start_y_far;
+            const y_outermost_cable_bottom_far = svg_cable_start_y_far + cable_array_height_display_far;
+
+            
+            // --- 4. Draw Dynamic Labels & Lines ---
+            const color_min_rec = "#10b981";  // Green
+            const color_min_out = "#0ea5e9";  // Blue
+            const color_max_out_near = "#f97316"; // Orange
+            const color_max_theo = "#d946ef"; // Magenta
+            
+            const text_offset_x = 5;
+            
+            // Inline Near Offset
+            let y = 30; // Y-position for the label
+            createMultiLineText(
+                // Pass group and ns
+                group, ns,
+                svg_cable_start_x + text_offset_x, y, 
+                "Inline Near Offset:", `${formatNumber(inputs.inline_near_offset)}m`, 
+                "start"
+            );
+            // Moved measurement line *above* the label
+            // Pass group and ns
+            createMeasurementLine(group, ns, svg_source_x, y - 10, svg_cable_start_x, y - 10, "#6b7280", "H");
+            
+            // Inline Far Offset
+            y = 70; // Y-position for the label
+            createMultiLineText(
+                // Pass group and ns
+                group, ns,
+                svg_cable_end_x - text_offset_x, y, 
+                "Inline Far Offset:", `${formatNumber(results.inline_far_offset)}m`, 
+                "end"
+            );
+            // Moved measurement line *above* the label
+            // Pass group and ns
+            createMeasurementLine(group, ns, svg_source_x, y - 10, svg_cable_end_x, y - 10, "#6b7280", "H");
+            
+            // Draw Source Separation measurement
+            if (inputs.num_sources > 1) {
+                const line_x_pos = 90; // Positioned left of sources
+                const line_y_start = y_outermost_source_bottom - svg_source_sep_display; 
+                const line_y_end = y_outermost_source_bottom; 
+                const text_x_pos = line_x_pos;
+                // Position label *below* the bottom tick
+                const text_y_pos = line_y_end + 15; 
+                
+                createMultiLineText(
+                    // Pass group and ns
+                    group, ns,
+                    text_x_pos, text_y_pos, 
+                    "Source Separation:", `${formatNumber(inputs.source_separation)}m`, 
+                    "middle"
+                ); 
+                // Pass group and ns
+                createMeasurementLine(group, ns, line_x_pos, line_y_start, line_x_pos, line_y_end, "#6b7280", "V");
+            }
+            
+            // Draw Receiver Array Width (FAR) measurement.
+            if (inputs.num_cables > 1) {
+                const line_x_pos = svg_cable_end_x; // Exactly at the end
+                const line_y_start = y_outermost_cable_top_far;
+                const line_y_end = y_outermost_cable_bottom_far;
+                
+                const text_x_pos = line_x_pos - text_offset_x; // Draw text inwards
+                // Position label *below* the top tick to stay in view
+                const text_y_pos = line_y_start + 25; 
+                
+                createMultiLineText(
+                    // Pass group and ns
+                    group, ns,
+                    text_x_pos, text_y_pos, 
+                    "Receiver Array Width (Far):", `${formatNumber(results.receiver_array_width_far)}m`, 
+                    "end" // Anchor to the end (right)
+                );
+                // Pass group and ns
+                createMeasurementLine(group, ns, line_x_pos, line_y_start, line_x_pos, line_y_end, "#6b7280", "V");
+            }
+
+            // Draw Receiver Array Width (NEAR) measurement.
+            if (inputs.num_cables > 1) {
+                const line_x_pos = svg_cable_start_x; // Exactly at the start
+                const line_y_start = y_outermost_cable_top;
+                const line_y_end = y_outermost_cable_bottom;
+                
+                const text_x_pos = line_x_pos + text_offset_x; // Draw text inwards
+                // Position label *below* the top tick for consistency
+                const text_y_pos = line_y_start + 25; 
+                
+                createMultiLineText(
+                    // Pass group and ns
+                    group, ns,
+                    text_x_pos, text_y_pos, 
+                    "Receiver Array Width (Near):", `${formatNumber(results.receiver_array_width)}m`, 
+                    "start" // Anchor to the start (left)
+                );
+                // Pass group and ns
+                createMeasurementLine(group, ns, line_x_pos, line_y_start, line_x_pos, line_y_end, "#6b7280", "V");
+            }
+
+            // Draw Cable Separation (Near) between last two cables
+            if (inputs.num_cables > 1) {
+                const line_x_pos_near = svg_cable_start_x + 60; // Position near the front
+                const line_y_start = y_outermost_cable_bottom - svg_cable_sep_display; // 2nd to last cable
+                const line_y_end = y_outermost_cable_bottom; // last cable
+                const text_y_pos = line_y_start + (line_y_end - line_y_start) / 2.0;
+
+                createMultiLineText(
+                    // Pass group and ns
+                    group, ns,
+                    line_x_pos_near + text_offset_x, text_y_pos, 
+                    "Cable Sep (Near):", `${formatNumber(inputs.cable_separation)}m`,
+                    "start"
+                );
+                // Pass group and ns
+                createMeasurementLine(group, ns, line_x_pos_near, line_y_start, line_x_pos_near, line_y_end, "#6b7280", "V");
+            }
+
+            // Draw Cable Separation (Far) if fanning is active
+            if (inputs.cable_fanning_factor !== 1 && inputs.num_cables > 1) {
+                const line_x_pos_far = svg_cable_end_x - 60; // Position near the end
+                const line_y_start_far = y_outermost_cable_bottom_far - (svg_cable_sep_display * inputs.cable_fanning_factor);
+                const line_y_end_far = y_outermost_cable_bottom_far;
+                const text_y_pos_far = line_y_start_far + (line_y_end_far - line_y_start_far) / 2.0;
+
+                createMultiLineText(
+                    // Pass group and ns
+                    group, ns,
+                    line_x_pos_far - text_offset_x, text_y_pos_far, 
+                    "Cable Sep (Far):", `${formatNumber(results.cable_separation_far)}m`, 
+                    "end"
+                );
+                // Pass group and ns
+                createMeasurementLine(group, ns, line_x_pos_far, line_y_start_far, line_x_pos_far, line_y_end_far, "#6b7280", "V");
+            }
+
+            // --- Draw Diagonal Offset Labels (Single Line) ---
+            // Grouped in the bottom-left corner with tighter spacing
+
+            let y_base = 630;
+            const y_inc = 30; // Compact vertical spacing
+            const x_pos = 20; // X-position for the start of the text
+
+            // Minimum Offset Recorded (Diagonal)
+            y = y_base;
+            createText(
+                // Pass group and ns
+                group, ns,
+                x_pos, y, 
+                `Minimum Offset Recorded: ${formatNumber(results.minimum_recorded_offset)}m`, 
+                "start", 12, color_min_rec
+            );
+            // Pass group and ns
+            createLine(group, ns, svg_source_x, y_innermost_source, svg_cable_start_x, y_innermost_cable, color_min_rec, true);
+
+            // Draw Min Offset to Outermost Near Channel
+            y += y_inc; // 660
+            createText(
+                // Pass group and ns
+                group, ns,
+                x_pos, y, 
+                `Minimum Offset to Outermost Near Channel: ${formatNumber(results.min_offset_outermost_cable)}m`, 
+                "start", 12, color_min_out
+            );
+            // Pass group and ns
+            createLine(group, ns, svg_source_x, y_outermost_source_top, svg_cable_start_x, y_outermost_cable_top, color_min_out, true);
+            
+            // Draw Max Offset to Outermost Near Channel
+            y += y_inc; // 690
+            createText(
+                // Pass group and ns
+                group, ns,
+                x_pos, y, 
+                `Maximum Offset to Outermost Near Channel: ${formatNumber(results.max_offset_to_outermost_near_group)}m`, 
+                "start", 12, color_max_out_near
+            );
+            // Pass group and ns
+            createLine(group, ns, svg_source_x, y_outermost_source_bottom, svg_cable_start_x, y_outermost_cable_top, color_max_out_near, true);
+            
+            // Draw Maximum Theoretical Offset
+            y += y_inc; // 720
+            createText(
+                // Pass group and ns
+                group, ns,
+                x_pos, y, 
+                `Maximum Theoretical Offset: ${formatNumber(results.maximum_theoretical_offset)}m`, 
+                "start", 12, color_max_theo
+            );
+            // Line points to the FAR end of the bottom cable.
+            // Pass group and ns
+            createLine(group, ns, svg_source_x, y_outermost_source_top, svg_cable_end_x, y_outermost_cable_bottom_far, color_max_theo, true);
+
+            // --- Add note if diagram is limited ---
+            if (inputs.num_cables > max_draw_count || inputs.num_sources > max_draw_count) {
+                // Pass group and ns
+                createText(group, ns, 780, 730, `Note: Diagram limited to ${max_draw_count} sources/cables for clarity.`, "end", 10, "#6b7280");
+                createText(group, ns, 780, 742, "All calculations use your full input values.", "end", 10, "#6b7280");
+            }
+
+        }
+
+        /**
+         * Main function to display the report in the HTML document.
+         * @param {object} inputs - The user input object.
+         * @param {object} results - The calculated results object.
+         * @param {boolean} showAllClasses - Flag to show all classes or truncate.
+         * @param {boolean} roundValues - Flag to round table values to integers.
+         */
+        function displayReport(inputs, results, showAllClasses, roundValues) {
+            // --- 1. Populate Calculated Parameters List ---
+            // These lists are never rounded.
+            populateList('basic-results-list', results, BASIC_KEYS);
+
+            // --- 2. Populate Acquisition Geometry List ---
+            populateList('geometry-results-list', results, GEOMETRY_KEYS);
+
+            // --- 3. Populate Offset Class Table ---
+            const table = document.getElementById('offset-class-table');
+            table.innerHTML = ''; // Clear old table
+            
+            // Create Header
+            const thead = table.createTHead();
+            const headerRow = thead.insertRow();
+            const headers = ['Class', 'Min Offset (m)', 'Mid Value (m)', 'Max Offset (m)'];
+            headers.forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+
+            // Create Body
+            const tbody = table.createTBody();
+            const total_classes = results.offset_classes.length;
+            const first_fully_populated_label = results.first_fully_populated_class_label;
+
+            let display_classes = [];
+            // Use showAllClasses flag to determine truncation
+            if (total_classes <= 26 || showAllClasses) {
+                display_classes = results.offset_classes;
+            } else {
+                // Show first 15, ellipsis, last 10
+                display_classes = [
+                    ...results.offset_classes.slice(0, 15),
+                    null, // Ellipsis marker
+                    ...results.offset_classes.slice(-10)
+                ];
+            }
+
+            for (const oc of display_classes) {
+                const row = tbody.insertRow();
+                if (oc === null) {
+                    const cell = row.insertCell();
+                    cell.textContent = '...';
+                    cell.colSpan = 4;
+                    cell.style.textAlign = 'center';
+                    continue;
+                }
+
+                const highlight = (oc.class === first_fully_populated_label);
+
+                const cellClass = row.insertCell();
+                cellClass.textContent = oc.class;
+                if (highlight) cellClass.classList.add('highlight-class');
+
+                // Pass roundValues flag to formatNumber for table cells
+                const cellMin = row.insertCell();
+                cellMin.textContent = formatNumber(oc.min_offset, roundValues); 
+                if (highlight) cellMin.classList.add('highlight-class');
+
+                const cellMid = row.insertCell();
+                cellMid.textContent = formatNumber(oc.mid_value, roundValues); 
+                if (highlight) cellMid.classList.add('highlight-class');
+                
+                const cellMax = row.insertCell();
+                cellMax.textContent = formatNumber(oc.max_offset, roundValues); 
+                if (highlight) cellMax.classList.add('highlight-class');
+            }
+            
+            // --- 4. Update Note ---
+            const note = document.getElementById('offset-class-note');
+            if (first_fully_populated_label) {
+                note.textContent = `* The highlighted class (${first_fully_populated_label}) is the first fully populated offset class.`;
+                note.style.display = 'block';
+            } else {
+                note.style.display = 'none';
+            }
+
+            // --- 5. Update Formula Sections ---
+            const eosFormulaDiv = document.getElementById('hdredit-formula');
+            const inflowFormulaDiv = document.getElementById('inflowmath-formula');
+            const hdredit_min_offset = results.first_min_offset_for_hdredit;
+            const offset_spacing = results.nominal_offset_class_spacing;
+            
+            if (!isNaN(hdredit_min_offset) && !isNaN(offset_spacing)) {
+                // Get rounded or precise values
+                const minOffsetStr = formatNumber(hdredit_min_offset, roundValues);
+                const spacingStr = formatNumber(offset_spacing, roundValues);
+                
+                // Populate EOS hdredit formula
+                eosFormulaDiv.innerHTML = `
+                    To code this in EOS hdredit, use the following:<br>
+                    <strong>OFFBIN = floor(((OFFSETF - ${minOffsetStr}) / ${spacingStr}) + 1)</strong>
+                `;
+
+                // Populate the new InFlowMath formula
+                inflowFormulaDiv.innerHTML = `
+                    To code this in Imaging AnyWare InFlowMath, use the following:<br>
+                    <strong>(int)OFFBIN = floor(((OFFSET - ${minOffsetStr}) / ${spacingStr}) + 1);</strong>
+                `;
+
+            } else {
+                // Handle errors in both divs
+                eosFormulaDiv.innerHTML = "Calculation error: Invalid inputs.";
+                inflowFormulaDiv.innerHTML = "Calculation error: Invalid inputs.";
+            }
+
+            // --- 6. Update Diagram ---
+            try {
+                updateDiagram(inputs, results);
+            } catch (e) {
+                console.error("Error drawing diagram:", e);
+                // Don't let a diagram error stop the report
+            }
+        }
+
+        /**
+         * Main execution function.
+         * Gathers inputs, validates them, runs calculations, and displays the report.
+         */
+        function run() {
+            // Get all input values and parse them as floats/integers
+            const inputs = {
+                num_sources: parseInt(document.getElementById('num_sources').value, 10),
+                group_interval: parseFloat(document.getElementById('group_interval').value),
+                shot_point_interval: parseFloat(document.getElementById('shot_point_interval').value),
+                groups_per_cable: parseInt(document.getElementById('groups_per_cable').value, 10),
+                inline_near_offset: parseFloat(document.getElementById('inline_near_offset').value),
+                cable_separation: parseFloat(document.getElementById('cable_separation').value),
+                source_separation: parseFloat(document.getElementById('source_separation').value),
+                num_cables: parseInt(document.getElementById('num_cables').value, 10),
+                cable_fanning_factor: parseFloat(document.getElementById('cable_fanning_factor').value)
+            };
+            
+            // Get table option values
+            const showAllClasses = document.getElementById('show_all_classes_toggle').checked;
+            const roundValues = document.getElementById('round_classes_toggle').checked;
+
+            // --- Input Validation ---
+            // 1. Check for any NaN values first
+            for (const [key, value] of Object.entries(inputs)) {
+                if (isNaN(value)) {
+                    // Get the label text for a user-friendly error
+                    const label = document.querySelector(`label[for="${key.replace(/_/g, '_')}"]`).textContent;
+                    alert(`Invalid input for "${label}". Please enter a valid number.`);
+                    return;
+                }
+            }
+
+            // 2. Define validation rules
+            const rules = {
+                // Must be > 0
+                mustBePositive: {
+                    'group_interval': 'Group interval', 
+                    'shot_point_interval': 'Shot point interval', 
+                    'cable_separation': 'Cable separation', 
+                    'cable_fanning_factor': 'Cable Fanning Factor'
+                },
+                // Must be >= 1
+                mustBeAtLeastOne: {
+                    'num_sources': 'Number of sources', 
+                    'groups_per_cable': '# Groups per cable', 
+                    'num_cables': '# Cables'
+                },
+                // Must be >= 0
+                mustBeNonNegative: {
+                    'inline_near_offset': 'Inline near offset', 
+                    'source_separation': 'Source separation'
+                }
+            };
+
+            // 3. Check rules
+            for (const [key, label] of Object.entries(rules.mustBePositive)) {
+                if (inputs[key] <= 0) {
+                    alert(`Input for "${label}" must be greater than 0.`);
+                    return;
+                }
+            }
+            
+            for (const [key, label] of Object.entries(rules.mustBeAtLeastOne)) {
+                if (inputs[key] < 1) {
+                    alert(`Input for "${label}" must be at least 1.`);
+                    return;
+                }
+            }
+
+            for (const [key, label] of Object.entries(rules.mustBeNonNegative)) {
+                if (inputs[key] < 0) {
+                    alert(`Input for "${label}" cannot be negative.`);
+                    return;
+                }
+            }
+            // --- End Validation ---
+            
+            // Run the calculations
+            const results = calculateGeophysics(inputs);
+            
+            // Display the results, passing the new options
+            displayReport(inputs, results, showAllClasses, roundValues);
+        }
+
+        // Add event listener to the button
+        document.getElementById('calculate-btn').addEventListener('click', run);
+        
+        // Add event listeners to the new checkboxes to re-run
+        document.getElementById('show_all_classes_toggle').addEventListener('change', run);
+        document.getElementById('round_classes_toggle').addEventListener('change', run);
+        
+        // Run once on page load with default values
+        document.addEventListener('DOMContentLoaded', run);
+
+    </script>
+</body>
+</html>
+
